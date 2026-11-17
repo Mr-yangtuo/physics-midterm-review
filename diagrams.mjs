@@ -1,0 +1,61 @@
+import fs from 'node:fs';
+const teal='#176f68',orange='#cf713c',ink='#233c42',muted='#8ca2a2';
+const text=(x,y,s,extra='')=>`<text x="${x}" y="${y}" ${extra}>${s}</text>`;
+const line=(x1,y1,x2,y2,color=muted,extra='')=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" ${extra}/>`;
+const path=(f,lo,hi,X,Y,color=teal,extra='')=>`<path d="${Array.from({length:501},(_,i)=>{const x=lo+(hi-lo)*i/500;return `${i?'L':'M'}${X(x).toFixed(3)},${Y(f(x)).toFixed(3)}`}).join(' ')}" fill="none" stroke="${color}" stroke-width="2.5" ${extra}/>`;
+function save(name,title,body){fs.writeFileSync(`docs/diagrams/${name}.svg`,`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" role="img" aria-labelledby="title"><title id="title">${title}</title><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6" fill="${teal}"/></marker></defs><rect width="640" height="300" rx="14" fill="#f4f8f6"/><g font-family="Arial,Microsoft YaHei,sans-serif" font-size="14" fill="${ink}" stroke-width="1.4">${body}</g></svg>`);}
+export function diagrams(){fs.mkdirSync('docs/diagrams',{recursive:true});
+let s='';
+// Exact phasor: 60 degrees, x projection is A/2, rotation counterclockwise.
+s+=`<circle cx="135" cy="145" r="90" fill="none" stroke="${muted}"/>`;
+s+=line(25,145,250,145)+line(135,250,135,35);
+s+=line(135,145,180,145,orange,'stroke-width="4"')+line(135,145,180,67.058,teal,'stroke-width="3" marker-end="url(#arrow)"')+line(180,67.058,180,145,muted,'stroke-dasharray="4 4"');
+s+=`<path d="M225,145 A90,90 0 0 0 212.94,100" fill="none" stroke="${teal}" marker-end="url(#arrow)"/>`;
+s+=text(186,68,'A')+text(154,166,'A/2')+text(90,268,'相位 60°，逆时针转动');
+const X=t=>300+t*280,Y=y=>145-70*y;
+s+=line(290,145,600,145)+line(300,235,300,55)+path(t=>Math.cos(2*Math.PI*t),0,1,X,Y);
+for(const [t,lab] of [[0,'0'],[.25,'T/4'],[.5,'T/2'],[.75,'3T/4'],[1,'T']])s+=text(X(t),244,lab,'text-anchor="middle"');
+s+=text(303,42,'x')+text(610,148,'t')+text(350,268,'右图：x = A cos(2πt/T)');
+save('shm','旋转矢量的位移投影与余弦振动曲线',s);
+// Traveling wave: t=0 (solid), t=T/8 (dashed) moves right by lambda/8.
+const Wx=x=>55+x*265,Wy=y=>145-y*65;
+s=line(40,145,610,145)+line(55,235,55,45);
+s+=path(x=>Math.cos(2*Math.PI*x),0,2,Wx,Wy)+path(x=>Math.cos(2*Math.PI*(x-.125)),0,2,Wx,Wy,orange,'stroke-dasharray="6 5"');
+s+=line(320,55,353.125,55,teal,'marker-end="url(#arrow)"')+text(330,39,'传播 +x');
+for(const [v,l] of [[0,'0'],[.5,'λ/2'],[1,'λ'],[1.5,'3λ/2'],[2,'2λ']])s+=text(Wx(v),235,l,'text-anchor="middle"');
+s+=text(72,30,'y / A')+text(607,164,'x')+text(100,273,'实线 t = 0')+text(305,273,'虚线 t = T/8；右移 λ/8');
+save('wave','沿正 x 传播的余弦波，两个时刻的波形准确右移八分之一波长',s);
+s=line(40,145,610,145)+path(x=>Math.cos(2*Math.PI*x),0,2,Wx,Wy,muted,'stroke-dasharray="5 5"')+path(x=>-Math.cos(2*Math.PI*x),0,2,Wx,Wy,muted,'stroke-dasharray="5 5"')+path(x=>.65*Math.cos(2*Math.PI*x),0,2,Wx,Wy);
+for(const x of [.25,.75,1.25,1.75])s+=`<circle cx="${Wx(x)}" cy="145" r="5" fill="${orange}"/>`+text(Wx(x),228,'波节','text-anchor="middle"');
+s+=text(65,35,'y = 2A cos(kx) cos(ωt)')+text(65,270,'虚线为 ±2A cos(kx)；橙点始终静止')+text(580,165,'x');
+save('standing','余弦空间因子驻波的包络与四个波节',s);
+s=line(120,40,120,92,ink,'stroke-width="5"')+line(120,102,120,158,ink,'stroke-width="5"')+line(120,168,120,240,ink,'stroke-width="5"')+line(530,35,530,245,ink,'stroke-width="4"');
+s+=line(120,97,530,75,teal)+line(120,163,530,75,orange)+line(120,130,530,130,muted,'stroke-dasharray="5 5"');
+s+=text(75,99,'S₁')+text(75,169,'S₂')+text(544,79,'P')+text(544,136,'O')+text(548,110,'x');
+s+=line(62,97,62,163)+line(56,97,68,97)+line(56,163,68,163)+text(40,135,'d');
+s+=line(120,261,530,261)+text(318,282,'D')+text(252,57,'两条光路在 P 相遇')+text(200,220,'几何示意，屏距与缝距未按比例');
+save('young','杨氏双缝几何，缝距 d、屏距 D、屏上坐标 x',s);
+s=`<rect x="35" y="100" width="570" height="90" fill="#cce4df"/>`+line(35,100,605,100,teal)+line(35,190,605,190,teal);
+s+=line(200,25,200,250,muted,'stroke-dasharray="5 5"');
+const A=[200,100],B=[200+90/Math.sqrt(8),190],C=[200+180/Math.sqrt(8),100];
+s+=line(150,13.397,A[0],A[1],teal,'marker-end="url(#arrow)"')+line(...A,250,13.397,teal,'marker-end="url(#arrow)"');
+s+=line(...A,...B,orange)+line(...B,...C,orange)+line(...C,C[0]+50,13.397,teal,'marker-end="url(#arrow)"');
+s+=text(375,65,'空气 n₀ = 1')+text(375,150,'薄膜 n = 1.5')+text(375,225,'空气 nₛ = 1');
+s+=text(66,60,'i = 30°')+text(66,150,'r ≈ 19.47°')+text(65,270,'上界面反射反相，下界面反射不反相')+line(560,100,560,190)+text(570,150,'e');
+save('film','空气薄膜空气的实际折射几何，入射角30度膜内19.47度',s);
+s=`<circle cx="168" cy="143" r="3" fill="${ink}"/>`;
+for(let m=1;m<=6;m++)s+=`<circle cx="168" cy="143" r="${43*Math.sqrt(m)}" fill="none" stroke="${teal}" stroke-width="2"/>`;
+s+=text(68,275,'暗环：rₘ ∝ √m')+text(340,64,'反射观察，中心接触')+text(340,104,'中心为暗点（m = 0）')+text(340,145,'越向外，相邻暗环越密')+text(340,188,'同级暗环：rₘ² = mλR/n')+text(340,231,'图中仅标暗环中心线');
+save('rings','牛顿暗环半径按级次平方根生成，中心暗且外侧环更密',s);
+const Dx=z=>320+z*76,Dy=i=>220-165*i;
+s=line(45,220,610,220)+line(320,235,320,35);
+s+=path(z=>z===0?1:(Math.sin(Math.PI*z)/(Math.PI*z))**2,-3.5,3.5,Dx,Dy);
+for(let z=-3;z<=3;z++)s+=text(Dx(z),244,`${z}`,'text-anchor="middle"');
+s+=line(Dx(-1),75,Dx(1),75,orange)+line(Dx(-1),69,Dx(-1),83,orange)+line(Dx(1),69,Dx(1),83,orange);
+s+=text(120,61,'中央明纹边界 z = ±1')+text(64,35,'I / I(0)')+text(170,280,'z = a sinθ / λ；曲线为 [sin(πz)/(πz)]²');
+save('diffraction','精确sinc平方单缝衍射强度曲线，暗纹位于非零整数',s);
+s='';for(const [i,angle,label] of [[0,0,'0°'],[1,45,'45°'],[2,90,'90°']]){let cx=110+i*210,cy=135;let rad=angle*Math.PI/180; s+=`<circle cx="${cx}" cy="${cy}" r="57" fill="none" stroke="${muted}"/>`+line(cx-46*Math.cos(rad),cy+46*Math.sin(rad),cx+46*Math.cos(rad),cy-46*Math.sin(rad),teal,'stroke-width="4"')+text(cx,221,label,'text-anchor="middle"');}
+s+=line(175,135,245,135,teal,'marker-end="url(#arrow)"')+line(385,135,455,135,teal,'marker-end="url(#arrow)"');
+s+=text(65,45,'透振轴示意（各片正视图）')+text(80,265,'I₀/2')+text(290,265,'I₀/4')+text(500,265,'I₀/8');
+save('polarization','三偏振片透振轴依次为0、45和90度，逐片强度为二分之一四分之一八分之一',s);
+}

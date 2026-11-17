@@ -1,0 +1,7 @@
+{
+  "name": "physics-midterm-review",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs", "check": "node verify.mjs" },
+  "dependencies": { "katex": "0.16.22" }
+}
